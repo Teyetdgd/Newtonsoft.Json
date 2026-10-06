@@ -113,9 +113,16 @@ jobs:
       run: |
         cd target-project
         echo "Testing obfuscated project..."
-        # Newtonsoft.Json: build the obfuscated solution then run its NUnit
-        # test project.
-        dotnet build Newtonsoft.Json.sln
+        # Newtonsoft.Json: locate the solution AFTER obfuscation (Src/ may
+        # have been renamed; upstream ships Src/Newtonsoft.Json.slnx, not a
+        # root .sln). Then build and run the test projects.
+        SLN=$(find . -name "*.slnx" -o -name "*.sln" | grep -v obj/ | head -n 1)
+        if [ -z "$SLN" ]; then
+          echo "ERROR: no solution file found after obfuscation"
+          exit 1
+        fi
+        echo "Building $SLN"
+        dotnet build "$SLN"
         dotnet test --no-build
 
     - name: 7. Commit and Push Changes
